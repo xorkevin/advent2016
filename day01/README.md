@@ -20,6 +20,7 @@ For example:
 
 `253`
 
+
 --- Part Two ---
 
 Then, you notice the instructions continue on the back of the Recruiting Document. Easter Bunny HQ is actually at the first location you visit twice.
