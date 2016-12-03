@@ -6,6 +6,7 @@ import (
 	"math"
 	"strconv"
 	"strings"
+	"time"
 )
 
 const (
@@ -28,6 +29,8 @@ func (v Vec2) asString() string {
 }
 
 func main() {
+	start := time.Now()
+
 	file, err := ioutil.ReadFile(file_name)
 	if err != nil {
 		fmt.Println(err)
@@ -109,4 +112,6 @@ func main() {
 	fmt.Println(fmt.Sprintf("final distance: %d", dist))
 
 	fmt.Println(fmt.Sprintf("first visited twice distance: %d", firsttwice))
+
+	fmt.Println(fmt.Sprintf("time elapsed: %s", time.Since(start)))
 }

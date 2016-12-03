@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"math"
 	"strings"
+	"time"
 )
 
 const (
@@ -94,6 +95,8 @@ func (v *Vec2Keypad) toDigit() rune {
 }
 
 func main() {
+	start := time.Now()
+
 	file, err := ioutil.ReadFile(file_name)
 	if err != nil {
 		fmt.Println(err)
@@ -131,4 +134,6 @@ func main() {
 
 	fmt.Println("square keypad: ", digits)
 	fmt.Println("larger keypad: ", string(digits2))
+
+	fmt.Println(fmt.Sprintf("time elapsed: %s", time.Since(start)))
 }
