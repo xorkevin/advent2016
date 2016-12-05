@@ -33,8 +33,9 @@ func main() {
 	start := time.Now()
 
 	password := ""
+	i := 0
 
-	for i := 0; len(password) < 8; i++ {
+	for i = 0; len(password) < 8; i++ {
 		hash := fmt.Sprintf("%x", md5.Sum([]byte(input+strconv.Itoa(i))))
 		if checkHash(hash) {
 			password += string(hash[5])
@@ -43,9 +44,10 @@ func main() {
 	}
 
 	password2 := [8]byte{0, 0, 0, 0, 0, 0, 0, 0}
+	j := 0
 
-	for i := 0; checkPass(password2[:]); i++ {
-		hash := fmt.Sprintf("%x", md5.Sum([]byte(input+strconv.Itoa(i))))
+	for j = 0; checkPass(password2[:]); j++ {
+		hash := fmt.Sprintf("%x", md5.Sum([]byte(input+strconv.Itoa(j))))
 		if checkHash(hash) {
 			k := hash[5] - '0'
 			if k < 8 && password2[k] == 0 {
@@ -55,8 +57,8 @@ func main() {
 		}
 	}
 
-	fmt.Println(fmt.Sprintf("\npassword: %s", password))
-	fmt.Println(fmt.Sprintf("\npassword2: %c", password2))
+	fmt.Println(fmt.Sprintf("\npassword: %s in %d iterations", password, i))
+	fmt.Println(fmt.Sprintf("\npassword2: %c in %d iterations", password2, j))
 
 	fmt.Println(fmt.Sprintf("\ntime elapsed: %s", time.Since(start)))
 }
