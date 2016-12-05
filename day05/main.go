@@ -33,7 +33,6 @@ func main() {
 	start := time.Now()
 
 	password := ""
-	passChan := make(chan string, 8)
 	passDone := make(chan bool)
 	iterations := 0
 
@@ -43,19 +42,12 @@ func main() {
 		for i = 0; j < 8; i++ {
 			hash := fmt.Sprintf("%x", md5.Sum([]byte(input+strconv.Itoa(i))))
 			if checkHash(hash) {
-				passChan <- string(hash[5])
+				password += string(hash[5])
+				fmt.Println(password)
 				j++
 			}
 		}
 		iterations = i
-		close(passChan)
-	}()
-
-	go func() {
-		for i := range passChan {
-			password += i
-			fmt.Println(password)
-		}
 		passDone <- true
 	}()
 
