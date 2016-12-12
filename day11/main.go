@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"math"
+	"reflect"
+	"sort"
 	"time"
 )
 
@@ -12,16 +14,29 @@ type (
 		chip int
 	}
 
+	Pairlist []Pair
+
 	State struct {
 		cost      int
 		heuristic int
 		elevator  int
-		pairs     []Pair
+		pairs     Pairlist
 	}
 
 	Index struct {
 		id   int
 		chip bool
+	}
+
+	Statelist struct {
+		states []State
+	}
+
+	Searcher struct {
+		cost       int
+		target     State
+		openlist   *Statelist
+		closedlist *Statelist
 	}
 )
 
@@ -68,6 +83,45 @@ func (p *Pair) down(limit int, chip bool) (Pair, bool) {
 	}
 }
 
+func (p Pairlist) Len() int {
+	return len(p)
+}
+func (p Pairlist) Swap(i, j int) {
+	p[i], p[j] = p[j], p[i]
+}
+func (p Pairlist) Less(i, j int) bool {
+	k := p[i].gen
+	l := p[j].gen
+	if k == l {
+		return p[i].chip < p[j].chip
+	} else {
+		return k < l
+	}
+}
+
+func StatesEqual(s1 *State, s2 *State) bool {
+	return reflect.DeepEqual(s1, s2)
+}
+
+func NewStatelist() *Statelist {
+	return &Statelist{
+		states: []State{},
+	}
+}
+
+func (s *Statelist) add(other State) {
+	unique := true
+	for _, i := range s.states {
+		if StatesEqual(&i, &other) {
+			unique = false
+			break
+		}
+	}
+	if unique {
+		s.states = append(s.states, other)
+	}
+}
+
 func (s *State) copy() State {
 	newPairs := make([]Pair, len(s.pairs))
 	copy(newPairs, s.pairs)
@@ -111,6 +165,10 @@ func (s *State) elevator_down(limit int) bool {
 	return true
 }
 
+func (s *State) sort() {
+	sort.Sort(s.pairs)
+}
+
 func (s *State) up(limit, pairId int, chip bool) (State, bool) {
 	newState := s.copy()
 	pair, success := s.pairs[pairId].up(limit, chip)
@@ -133,8 +191,8 @@ func (s *State) down(limit, pairId int, chip bool) (State, bool) {
 	}
 }
 
-func (s *State) nextStates(target *State) []State {
-	states := []State{}
+func (s *State) nextStates(target *State) *Statelist {
+	states := NewStatelist()
 
 	indicies := []Index{}
 	for n, i := range s.pairs {
@@ -152,31 +210,55 @@ func (s *State) nextStates(target *State) []State {
 		if success1 {
 			next_up.elevator_up(4)
 			next_up.inc_cost()
-			next_up.calc_heuristic(target)
-			states = append(states, next_up)
 		}
 		next_down, success2 := s.down(0, k.id, k.chip)
 		if success2 {
 			next_down.elevator_down(0)
 			next_down.inc_cost()
-			next_down.calc_heuristic(target)
-			states = append(states, next_down)
 		}
 		for j := i + 1; j < len(indicies); j++ {
 			l := indicies[j]
 			if success1 {
 				next, _ := next_up.up(4, l.id, l.chip)
-				next.calc_heuristic(target)
-				states = append(states, next)
+				next.sort()
+				// next.calc_heuristic(target)
+				states.add(next)
 			}
 			if success2 {
 				next, _ := next_up.down(0, l.id, l.chip)
-				next.calc_heuristic(target)
-				states = append(states, next)
+				next.sort()
+				// next.calc_heuristic(target)
+				states.add(next)
 			}
+		}
+		if success1 {
+			next_up.sort()
+			// next_up.calc_heuristic(target)
+			states.add(next_up)
+		}
+		if success2 {
+			next_down.sort()
+			// next_down.calc_heuristic(target)
+			states.add(next_down)
 		}
 	}
 	return states
+}
+
+func NewSearcher(init, target State) *Searcher {
+	k := Searcher{
+		cost:       0,
+		target:     target,
+		openlist:   NewStatelist(),
+		closedlist: NewStatelist(),
+	}
+	k.openlist.add(init)
+	return &k
+}
+
+func (s *Searcher) search() bool {
+
+	return true
 }
 
 var (
@@ -210,11 +292,9 @@ var (
 func main() {
 	start := time.Now()
 
-	init_state.calc_heuristic(&target_state)
-
 	nextStates := init_state.nextStates(&target_state)
 
-	for _, i := range nextStates {
+	for _, i := range nextStates.states {
 		fmt.Println(i)
 	}
 
