@@ -100,7 +100,7 @@ func (p Pairlist) Less(i, j int) bool {
 }
 
 func StatesEqual(s1 *State, s2 *State) bool {
-	return reflect.DeepEqual(s1, s2)
+	return s1.elevator == s2.elevator && reflect.DeepEqual(s1.pairs, s2.pairs)
 }
 
 func NewStatelist() *Statelist {
@@ -120,6 +120,12 @@ func (s *Statelist) add(other State) {
 	if unique {
 		s.states = append(s.states, other)
 	}
+}
+
+func (s *Statelist) pop() State {
+	k := s.states[0]
+	s.states = s.states[1:]
+	return k
 }
 
 func (s *State) copy() State {
@@ -257,7 +263,19 @@ func NewSearcher(init, target State) *Searcher {
 }
 
 func (s *Searcher) search() bool {
-
+	if len(s.openlist.states) < 1 {
+		return false
+	}
+	current := s.openlist.pop()
+	if StatesEqual(&current, &s.target) {
+		s.cost = current.cost
+		return false
+	}
+	s.closedlist.add(current)
+	nextStates := current.nextStates(&s.target)
+	for _, i := range nextStates.states {
+		s.openlist.add(i)
+	}
 	return true
 }
 
@@ -292,11 +310,12 @@ var (
 func main() {
 	start := time.Now()
 
-	nextStates := init_state.nextStates(&target_state)
+	s := NewSearcher(init_state, target_state)
 
-	for _, i := range nextStates.states {
-		fmt.Println(i)
+	for s.search() {
 	}
+
+	fmt.Println("cost: ", s.cost)
 
 	fmt.Println(fmt.Sprintf("time elapsed: %s", time.Since(start)))
 }
