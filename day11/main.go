@@ -310,7 +310,15 @@ func (s *Searcher) search() bool {
 	s.closedlist.add(current)
 	nextStates := current.nextStates(&s.target)
 	for _, i := range nextStates.states {
-		s.openlist.add(i)
+		unique := true
+		for _, j := range s.closedlist.states {
+			if StatesEqual(&i, &j) {
+				unique = false
+			}
+		}
+		if unique {
+			s.openlist.add(i)
+		}
 	}
 	return true
 }
