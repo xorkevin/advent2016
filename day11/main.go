@@ -175,6 +175,19 @@ func (s *State) sort() {
 	sort.Sort(s.pairs)
 }
 
+func isValidState(s *State) bool {
+	for _, i := range s.pairs {
+		if i.gen != i.chip {
+			for _, j := range s.pairs {
+				if i.chip == j.gen {
+					return false
+				}
+			}
+		}
+	}
+	return true
+}
+
 func (s *State) up(limit, pairId int, chip bool) (State, bool) {
 	newState := s.copy()
 	pair, success := s.pairs[pairId].up(limit, chip)
@@ -226,23 +239,27 @@ func (s *State) nextStates(target *State) *Statelist {
 			l := indicies[j]
 			if success1 {
 				next, _ := next_up.up(4, l.id, l.chip)
-				next.sort()
-				// next.calc_heuristic(target)
-				states.add(next)
+				if isValidState(&next) {
+					next.sort()
+					// next.calc_heuristic(target)
+					states.add(next)
+				}
 			}
 			if success2 {
-				next, _ := next_up.down(0, l.id, l.chip)
-				next.sort()
-				// next.calc_heuristic(target)
-				states.add(next)
+				next, _ := next_down.down(0, l.id, l.chip)
+				if isValidState(&next) {
+					next.sort()
+					// next.calc_heuristic(target)
+					states.add(next)
+				}
 			}
 		}
-		if success1 {
+		if success1 && isValidState(&next_up) {
 			next_up.sort()
 			// next_up.calc_heuristic(target)
 			states.add(next_up)
 		}
-		if success2 {
+		if success2 && isValidState(&next_down) {
 			next_down.sort()
 			// next_down.calc_heuristic(target)
 			states.add(next_down)
@@ -313,6 +330,7 @@ func main() {
 	s := NewSearcher(init_state, target_state)
 
 	for s.search() {
+		fmt.Println(len(s.openlist.states))
 	}
 
 	fmt.Println("cost: ", s.cost)
