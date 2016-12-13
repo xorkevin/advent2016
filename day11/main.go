@@ -109,6 +109,24 @@ func NewStatelist() *Statelist {
 	}
 }
 
+func (s Statelist) Len() int {
+	return len(s.states)
+}
+func (s Statelist) Swap(i, j int) {
+	s.states[i], s.states[j] = s.states[j], s.states[i]
+}
+func (s Statelist) Less(i, j int) bool {
+	i_g := s.states[i].cost
+	j_g := s.states[j].cost
+	i_f := i_g + s.states[i].heuristic
+	j_f := j_g + s.states[i].heuristic
+
+	if i_f == j_f {
+		return i_g < j_g
+	}
+	return i_f < j_f
+}
+
 func (s *Statelist) add(other State) {
 	unique := true
 	for _, i := range s.states {
@@ -241,7 +259,7 @@ func (s *State) nextStates(target *State) *Statelist {
 				next, _ := next_up.up(4, l.id, l.chip)
 				if isValidState(&next) {
 					next.sort()
-					// next.calc_heuristic(target)
+					next.calc_heuristic(target)
 					states.add(next)
 				}
 			}
@@ -249,19 +267,19 @@ func (s *State) nextStates(target *State) *Statelist {
 				next, _ := next_down.down(0, l.id, l.chip)
 				if isValidState(&next) {
 					next.sort()
-					// next.calc_heuristic(target)
+					next.calc_heuristic(target)
 					states.add(next)
 				}
 			}
 		}
 		if success1 && isValidState(&next_up) {
 			next_up.sort()
-			// next_up.calc_heuristic(target)
+			next_up.calc_heuristic(target)
 			states.add(next_up)
 		}
 		if success2 && isValidState(&next_down) {
 			next_down.sort()
-			// next_down.calc_heuristic(target)
+			next_down.calc_heuristic(target)
 			states.add(next_down)
 		}
 	}
@@ -283,6 +301,7 @@ func (s *Searcher) search() bool {
 	if len(s.openlist.states) < 1 {
 		return false
 	}
+	sort.Sort(s.openlist)
 	current := s.openlist.pop()
 	if StatesEqual(&current, &s.target) {
 		s.cost = current.cost
@@ -310,11 +329,41 @@ var (
 		},
 	}
 
+	init_state2 = State{
+		cost:      0,
+		heuristic: 0,
+		elevator:  0,
+		pairs: []Pair{
+			NewPair(0, 0),
+			NewPair(0, 0),
+			NewPair(0, 0),
+			NewPair(0, 0),
+			NewPair(1, 1),
+			NewPair(1, 1),
+			NewPair(1, 2),
+		},
+	}
+
 	target_state = State{
 		cost:      0,
 		heuristic: 0,
 		elevator:  3,
 		pairs: []Pair{
+			NewPair(3, 3),
+			NewPair(3, 3),
+			NewPair(3, 3),
+			NewPair(3, 3),
+			NewPair(3, 3),
+		},
+	}
+
+	target_state2 = State{
+		cost:      0,
+		heuristic: 0,
+		elevator:  3,
+		pairs: []Pair{
+			NewPair(3, 3),
+			NewPair(3, 3),
 			NewPair(3, 3),
 			NewPair(3, 3),
 			NewPair(3, 3),
@@ -328,9 +377,10 @@ func main() {
 	start := time.Now()
 
 	s := NewSearcher(init_state, target_state)
+	// s := NewSearcher(init_state2, target_state2)
 
 	for s.search() {
-		fmt.Println(len(s.openlist.states))
+		// fmt.Println(len(s.openlist.states))
 	}
 
 	fmt.Println("cost: ", s.cost)
