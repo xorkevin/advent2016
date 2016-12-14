@@ -54,8 +54,8 @@ func (h *HIndex) within(dist int, other *HIndex) bool {
 	return other.i-h.i <= dist
 }
 
-func (h *HIndex) lessThan(other *HIndex) bool {
-	return other.i-h.i > 0
+func (h *HIndex) lessThanEq(other *HIndex) bool {
+	return h.i <= other.i
 }
 
 func (h *HIndex) sameChar(other *HIndex) bool {
@@ -111,8 +111,40 @@ func FindHashes(dist int, inchan3, inchan5 <-chan HIndex, stopchan <-chan bool) 
 	outchan := make(chan HIndex, 64)
 	go func() {
 		defer close(outchan)
+		list5 := []HIndex{}
 		for i := range inchan3 {
-
+			markfordelete := 0
+			notFound := true
+			for n, j := range list5 {
+				if j.lessThanEq(&i) {
+					markfordelete = n
+				} else if i.sameChar(&j) && i.within(dist, &j) {
+					select {
+					case outchan <- i:
+					case <-stopchan:
+					}
+					notFound = false
+					break
+				}
+			}
+			if markfordelete > 0 {
+				list5 = list5[markfordelete+1:]
+			}
+			if notFound {
+				for j := range inchan5 {
+					if i.within(dist, &j) {
+						if i.sameChar(&j) {
+							select {
+							case outchan <- i:
+							case <-stopchan:
+							}
+							break
+						}
+					} else {
+						break
+					}
+				}
+			}
 		}
 	}()
 	return outchan
